@@ -1,0 +1,4 @@
+chess==1.11.2
+numpy==2.4.3
+python-chess==1.999
+scikit-fuzzy==0.5.0

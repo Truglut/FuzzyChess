@@ -1,0 +1,9 @@
+# Ignore Python stuffç
+__pycache__/
+.venv/
+env/
+.env
+
+# My ignored files
+Bibliografia/
+pruebas_python-chess.ipynb
