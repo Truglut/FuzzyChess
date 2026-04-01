@@ -91,12 +91,14 @@ def get_king_attackers_diff(board: chess.Board, color: chess.Color):
     king_square = board.king(color)
     if king_square is None:
         return 0
-    
+
     king_ring = chess.BB_KING_ATTACKS[king_square] | chess.BB_SQUARES[king_square]
 
     # Calculate attackers and defenders on adjacent squares
     attackers = count_attackers_in_mask(board, not color, king_ring)
-    defenders = count_attackers_in_mask(board, color, king_ring)
+    defenders = (
+        count_attackers_in_mask(board, color, king_ring) - king_ring.bit_count() + 1
+    )
 
     return defenders - attackers
 
@@ -108,7 +110,7 @@ def get_pawn_shield_metric(board: chess.Board, color: chess.Color):
     - two points are added if there is a pawn one rank ahead of the king
     - otherwise, check if there are any pawns on the same rank as the king or two
       ranks ahead. If that's the case, add one point.
-    
+
     The result is an integer between 0 and 6 (both inclusive).
     """
     king_square = board.king(color)
@@ -116,12 +118,12 @@ def get_pawn_shield_metric(board: chess.Board, color: chess.Color):
     king_rank = chess.square_rank(king_square)
     enemy_back_rank = 7 if color else 0
 
-    # If the king is in the enemy back rank, there is no shield
-    if king_rank == enemy_back_rank:
+    # If the king is in the enemy backrank or adjacent rank, there is no shield
+    if abs(king_rank - enemy_back_rank) <= 1:
         return 0
 
     friend_pawns = board.pawns & board.occupied_co[color]
-    
+
     king_file = chess.square_file(king_square)
     direction = 1 if color else -1
 
@@ -134,10 +136,10 @@ def get_pawn_shield_metric(board: chess.Board, color: chess.Color):
         adj_files = (king_file - 1, king_file, king_file + 1)
 
     rank_1_idx = king_rank + direction
-    rank_2_idx = king_rank + direction
+    rank_2_idx = king_rank + 2 * direction
 
-    bb_rank_1 = chess.BB_RANKS[rank_1_idx] if 0 <= rank_1_idx <= 7 else 0
-    bb_rank_2 = chess.BB_RANKS[rank_2_idx] if 0 <= rank_2_idx <= 7 else 0
+    bb_rank_1 = chess.BB_RANKS[rank_1_idx]
+    bb_rank_2 = chess.BB_RANKS[rank_2_idx]
     bb_king_rank = chess.BB_RANKS[king_rank]
     bb_rank_near = bb_rank_1 | bb_rank_2 | bb_king_rank
 
@@ -149,9 +151,8 @@ def get_pawn_shield_metric(board: chess.Board, color: chess.Color):
         # Pawns one rank ahead will count twice
         shield += min(1, (bb_file & friend_pawns & bb_rank_1).bit_count())
         shield += min(1, (bb_file & bb_rank_near & friend_pawns).bit_count())
-    
-    return shield
 
+    return shield
 
 
 def get_king_safety_params(board: chess.Board, color: chess.Color):
@@ -161,6 +162,7 @@ def get_king_safety_params(board: chess.Board, color: chess.Color):
     - measure of how solid the king's pawn shield is.
     """
     return get_king_attackers_diff(board, color), get_pawn_shield_metric(board, color)
+
 
 def get_material_count(board: chess.Board):
     material_count = 0
