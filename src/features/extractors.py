@@ -65,19 +65,36 @@ def count_attackers_in_mask(
     return total
 
 
+def get_center_piece_diff(board: chess.Board):
+    """
+    Calculates and returns the difference of number of pieces occupying the center.
+    """
+
+    occ_white = count_pieces_in_mask(board, chess.WHITE, CENTRAL_MASK)
+    occ_black = count_pieces_in_mask(board, chess.BLACK, CENTRAL_MASK)
+
+    return occ_white - occ_black
+
+
+def get_center_att_diff(board: chess.Board):
+    """
+    Calculates and returns the difference of number of attackers on central squares.
+    """
+
+    att_white = count_attackers_in_mask(board, chess.WHITE, CENTRAL_MASK)
+    att_black = count_attackers_in_mask(board, chess.BLACK, CENTRAL_MASK)
+
+    return att_white - att_black
+
+
 def get_center_params(board: chess.Board):
     """
     Calculates and returns the two basic features on which central control is based:
     difference of number of pieces occupying the center and
     difference of number of pieces attacking central squares.
     """
-    occupied_white = count_pieces_in_mask(board, chess.WHITE, CENTRAL_MASK)
-    occupied_black = count_pieces_in_mask(board, chess.BLACK, CENTRAL_MASK)
 
-    attackers_white = count_attackers_in_mask(board, chess.WHITE, CENTRAL_MASK)
-    attackers_black = count_attackers_in_mask(board, chess.BLACK, CENTRAL_MASK)
-
-    return occupied_white - occupied_black, attackers_white - attackers_black
+    return get_center_piece_diff(board), get_center_att_diff(board)
 
 
 def get_king_attackers_diff(board: chess.Board, color: chess.Color):
