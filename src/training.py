@@ -12,9 +12,22 @@ FEATURE_COLS = [
     "center_control",
     "material_count",
 ]
+VAR_CONFIGS = [
+    {
+        "paired": True,
+        "learnable_center": True
+    },
+    {
+        "paired": False,
+        "learnable_center": False
+    },
+    {
+        "paired": False,
+        "learnable_center": False
+    }
+]
 VAR_TYPES = [
-    "paired_absolute",
-    "paired_absolute",
+    "paired",
     "difference",
     "difference",
 ]
@@ -48,20 +61,19 @@ val_loader = DataLoader(val_dataset, batch_size=256, shuffle=False)
 n_vars = len(FEATURE_COLS)
 n_labels = 3
 model = SymmetricEvaluator(
-    n_vars=n_vars,
     n_labels=n_labels,
-    var_configs=VAR_TYPES,
+    var_configs=VAR_CONFIGS,
     X_mean=torch.zeros(n_vars, dtype=torch.float32),
     X_std=X.std(dim=0) + 1e-8,
 )
 
 ## Training specs
 # Optimizer and loss
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-6)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 loss_fn = nn.MSELoss()
 
 # Number of epochs
-n_epochs = 500
+n_epochs = 25
 
 # Keep track of losses for graph
 training_losses = []

@@ -7,90 +7,141 @@ import itertools
 class SymmetricEvaluator(nn.Module):
     def __init__(
         self,
-        var_configs: Iterable[str] | None = None,
+        var_configs: Iterable[dict[str, bool]] | None = None,
         n_labels: int | Iterable[int] = 3,
         X_mean: torch.Tensor | None = None,
         X_std: torch.Tensor | None = None,
         n_vars: int | None = None,
-    ): 
+    ):
         super().__init__()
 
-        # Validate feature_types input
-        if var_configs is None:
-            if n_vars is None:
-                raise ValueError("Must provide one of feature_types or n_vars")
-
-            var_configs = ["difference"] * n_vars
-        elif n_vars is not None:
-            raise ValueError("Cannot provide both feature_types and n_vars")
-
-        self.var_configs = var_configs
-
-        # Iterate over feature types to calculate actual number of variables and indices
-        var_indices = []
-        for i, vtype in enumerate(var_configs):
-            if vtype.lower() == "difference":
-                var_indices.append(i)
-
-            elif vtype.lower() == "paired":
-                var_indices.extend([i, i])
-
-            else:
-                raise ValueError(f"Unrecognised variable type: {vtype}")
-
-        n_vars = len(var_indices)
-        n_unique_features = len(var_configs)
-        self.register_buffer(
-            "var_indices", torch.tensor(var_indices, dtype=torch.long)
-        )
-
-        if isinstance(n_labels, int):
-            n_labels = [n_labels] * n_vars
-
+        # Input validation
         if X_mean is None or X_std is None:
             raise ValueError("X_mean and X_std must be provided")
+
+        if var_configs is None:
+            if n_vars is None:
+                raise ValueError("Must provide one of var_configs or n_vars")
+            var_configs = [{"paired": False, "learnable_center": False}] * n_vars
+        elif n_vars is not None:
+            raise ValueError("Cannot provide both var_configs and n_vars")
+
+        self.var_configs = list(var_configs)
+        self.n_unique_features = len(self.var_configs)
 
         self.register_buffer("X_mean", X_mean)
         self.register_buffer("X_std", X_std)
 
-        membership_idx = [list(range(n)) for n in n_labels]
+        # Setup variables and parameter routing
+        self._build_variable_mappings()
 
-        # TODO: allow manual rule initialization
-        rule_indices = list(itertools.product(*membership_idx))
-        self.register_buffer("rule_indices", torch.tensor(rule_indices))
+        # Setup membership function parameters
+        self._init_membership_params()
 
+        # Setup rules and consequents
+        # TODO: allow manual initialization of rules and consequents
+        self._init_rule_base(n_labels)
+
+    def _build_variable_mappings(self):
+        """
+        Computes mappings for parameter sharing and learnable centers logic
+        """
+        # Iterate over feature types to calculate actual number of variables and indices
+        var_indices = []
+        center_indices = []
+        center_multipliers = []
+        learnable_count = 0
+
+        for i, vconfig in enumerate(self.var_configs):
+            is_learnable = vconfig.get("learnable_center", False)
+            is_paired = vconfig.get("paired", False)
+
+            # Parameter sharing logic
+            var_indices.append(i)
+            if is_paired:
+                var_indices.append(i)
+
+            # Center parameter logic
+            if is_learnable:
+                idx = learnable_count
+                learnable_count += 1
+                mult = 1.0
+            else:
+                idx = 0  # dummy index, gets zeroed out by multiplier
+                mult = 0.0
+
+            # Store index for center parameter and corresponding multiplier
+            center_indices.append(idx)
+            center_multipliers.append(mult)
+
+            # Store index again with opposite multiplier for paired variables
+            if is_paired:
+                center_indices.append(idx)
+                center_multipliers.append(-mult)
+
+        # Register number of variables and variable mapping
+        self.n_vars = len(var_indices)
+        self.register_buffer("var_indices", torch.tensor(var_indices, dtype=torch.long))
+
+        # Register center parameter logic if needed
+        self.has_learnable_centers = learnable_count > 0
+        if self.has_learnable_centers:
+            self.learnable_count = learnable_count
+            self.register_buffer(
+                "center_indices", torch.tensor(center_indices, dtype=torch.long)
+            )
+            self.register_buffer(
+                "center_multipliers",
+                torch.tensor(center_multipliers, dtype=torch.float32),
+            )
+
+    def _init_membership_params(self):
+        """
+        Initializes the raw parameters for membership functions
+        """
         # Initialize member function parameters
         self.log_center_sigma_sq_raw = nn.Parameter(
-            torch.ones((n_unique_features,), dtype=torch.float32)
+            torch.ones((self.n_unique_features,), dtype=torch.float32)
         )
         self.log_sigmoid_slope = nn.Parameter(
-            torch.ones((n_unique_features,), dtype=torch.float32)
+            torch.ones((self.n_unique_features,), dtype=torch.float32)
         )
         self.sigmoid_center_raw = nn.Parameter(
-            torch.zeros((n_unique_features,), dtype=torch.float32)
+            torch.zeros((self.n_unique_features,), dtype=torch.float32)
+        )
+        if self.has_learnable_centers:
+            self.learnable_centers = nn.Parameter(
+                torch.zeros((self.learnable_count,), dtype=torch.float32)
+            )
+
+    def _init_rule_base(self, n_labels: int | Iterable[int]):
+        """
+        Sets up rule permutations, mirroring, and consequents
+        """
+        if isinstance(n_labels, int):
+            n_labels = [n_labels] * self.n_vars
+
+        membership_idx = [list(range(n)) for n in n_labels]
+        rule_indices = list(itertools.product(*membership_idx))
+        self.register_buffer(
+            "rule_indices", torch.tensor(rule_indices, dtype=torch.long)
         )
 
-        # Rule consequent initialization
-        n_rules = self.rule_indices.shape[0]
-
-        # Pair every rule with its mirror to enforce symmetry
+        # Determine mirror pairings
         mirror_indices = self._compute_mirror_indices(n_labels)
         self.register_buffer("mirror_indices", mirror_indices)
 
         # Determine free rule consequents
+        n_rules = len(rule_indices)
         is_free = torch.arange(n_rules, device=mirror_indices.device) < mirror_indices
         self.register_buffer("is_free", is_free)
-        n_free = is_free.sum().item()
 
-        # TODO: allow consequent initialization with non-zero or non-random values
-        # self.free_consequents = nn.Parameter(torch.zeros(n_free, dtype=torch.float32))
+        n_free = is_free.sum().item()
         self.free_consequents = nn.Parameter(
             0.01 * torch.randn(n_free, dtype=torch.float32)
         )
 
-    def _compute_mirror_indices(
-        self, n_labels: list[int]
-    ) -> torch.Tensor:
+    def _compute_mirror_indices(self, n_labels: list[int]) -> torch.Tensor:
         """
         For each rule (row in rule_indices), find the index of its mirror rule
         """
@@ -98,20 +149,17 @@ class SymmetricEvaluator(nn.Module):
         # Compute mirrored rules according to variable types
         mirrored_rules = self.rule_indices.clone()
         k = 0
-        for vtype in self.var_configs:
-            if vtype == "difference":
-                # flip label index: i -> (L - 1 - i)
-                mirrored_rules[:, k] = n_labels[k] - 1 - self.rule_indices[:, k]
-                k += 1
-
-            elif vtype == "paired":
+        for vconfig in self.var_configs:
+            if vconfig.get("paired"):
                 # swap paired variables (assumes k and k + 1 are the pair)
                 mirrored_rules[:, k] = self.rule_indices[:, k + 1]
                 mirrored_rules[:, k + 1] = self.rule_indices[:, k]
                 k += 2
 
             else:
-                raise ValueError(f"Unrecognised variable type: {vtype}")
+                # flip label index: i -> (L - 1 - i)
+                mirrored_rules[:, k] = n_labels[k] - 1 - self.rule_indices[:, k]
+                k += 1
 
         device = self.rule_indices.device
         # Flatten rule indices
@@ -157,14 +205,24 @@ class SymmetricEvaluator(nn.Module):
         n_samples = batch.shape[0]
 
         # Get per-feature membership parameters
-        center_sigma_sq = torch.exp(self.log_center_sigma_sq_raw[self.var_indices])
+        center_sigma_sq = (
+            torch.exp(self.log_center_sigma_sq_raw[self.var_indices]) + 1.0e-8
+        )
         sigmoid_slope = torch.exp(self.log_sigmoid_slope[self.var_indices])
         sigmoid_center = self.sigmoid_center_raw[self.var_indices]
 
         # Evaluate membership to central labels
-        mu_center = torch.exp(
-            -0.5 * torch.divide(batch**2, center_sigma_sq + 1e-8)
-        )  # should be (n_samples, n_vars)
+        if self.has_learnable_centers:
+            centers = (
+                self.learnable_centers[self.center_indices] * self.center_multipliers
+            )
+            mu_center = torch.exp(
+                -0.5 * torch.divide((batch - centers) ** 2, center_sigma_sq)
+            )  # should be (n_samples, n_vars)
+        else:
+            mu_center = torch.exp(
+                -0.5 * torch.divide(batch**2, center_sigma_sq)
+            )  # should be (n_samples, n_vars)
 
         # Evaluate membership to extreme labels
         mu_right = torch.sigmoid(sigmoid_slope * (batch - sigmoid_center))
@@ -182,7 +240,6 @@ class SymmetricEvaluator(nn.Module):
 
         # Log of the firing strengths for each rule   shape: (n_samples, n_rules)
         log_firing_strength = torch.log(per_var_rule_ant + 1e-8).sum(dim=1)
-        log_firing_strength -= log_firing_strength.max(dim=1, keepdim=True).values
 
         # Transform into weights through softmax
         weights = torch.softmax(log_firing_strength, dim=1)  # (n_rules, )
