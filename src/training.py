@@ -19,7 +19,7 @@ VAR_TYPES = [
     "difference",
 ]
 PAIRED_VARS = [
-    (0, 1), # white and black king safety
+    (0, 1),  # white and black king safety
 ]
 TARGET_COL = "Stockfish_Eval"
 
@@ -50,7 +50,7 @@ n_labels = 3
 model = SymmetricEvaluator(
     n_vars=n_vars,
     n_labels=n_labels,
-    var_types=VAR_TYPES,
+    var_configs=VAR_TYPES,
     X_mean=torch.zeros(n_vars, dtype=torch.float32),
     X_std=X.std(dim=0) + 1e-8,
 )

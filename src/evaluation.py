@@ -7,13 +7,43 @@ import itertools
 class SymmetricEvaluator(nn.Module):
     def __init__(
         self,
-        n_vars: int,
+        var_configs: Iterable[str] | None = None,
         n_labels: int | Iterable[int] = 3,
-        var_types: Iterable[str] | None = None,
         X_mean: torch.Tensor | None = None,
         X_std: torch.Tensor | None = None,
-    ):
+        n_vars: int | None = None,
+    ): 
         super().__init__()
+
+        # Validate feature_types input
+        if var_configs is None:
+            if n_vars is None:
+                raise ValueError("Must provide one of feature_types or n_vars")
+
+            var_configs = ["difference"] * n_vars
+        elif n_vars is not None:
+            raise ValueError("Cannot provide both feature_types and n_vars")
+
+        self.var_configs = var_configs
+
+        # Iterate over feature types to calculate actual number of variables and indices
+        var_indices = []
+        for i, vtype in enumerate(var_configs):
+            if vtype.lower() == "difference":
+                var_indices.append(i)
+
+            elif vtype.lower() == "paired":
+                var_indices.extend([i, i])
+
+            else:
+                raise ValueError(f"Unrecognised variable type: {vtype}")
+
+        n_vars = len(var_indices)
+        n_unique_features = len(var_configs)
+        self.register_buffer(
+            "var_indices", torch.tensor(var_indices, dtype=torch.long)
+        )
+
         if isinstance(n_labels, int):
             n_labels = [n_labels] * n_vars
 
@@ -31,25 +61,20 @@ class SymmetricEvaluator(nn.Module):
 
         # Initialize member function parameters
         self.log_center_sigma_sq_raw = nn.Parameter(
-            torch.ones((n_vars,), dtype=torch.float32)
+            torch.ones((n_unique_features,), dtype=torch.float32)
         )
         self.log_sigmoid_slope = nn.Parameter(
-            torch.ones((n_vars,), dtype=torch.float32)
+            torch.ones((n_unique_features,), dtype=torch.float32)
         )
         self.sigmoid_center_raw = nn.Parameter(
-            torch.zeros((n_vars,), dtype=torch.float32)
+            torch.zeros((n_unique_features,), dtype=torch.float32)
         )
 
         # Rule consequent initialization
         n_rules = self.rule_indices.shape[0]
 
-        # Store var_types for symmetry and membership handling
-        if var_types is None:
-            var_types = ["difference"] * n_vars
-        self.var_types = var_types
-
         # Pair every rule with its mirror to enforce symmetry
-        mirror_indices = self._compute_mirror_indices(n_labels, self.var_types)
+        mirror_indices = self._compute_mirror_indices(n_labels)
         self.register_buffer("mirror_indices", mirror_indices)
 
         # Determine free rule consequents
@@ -64,26 +89,22 @@ class SymmetricEvaluator(nn.Module):
         )
 
     def _compute_mirror_indices(
-        self, n_labels: list[int], var_types: Iterable[str]
+        self, n_labels: list[int]
     ) -> torch.Tensor:
         """
         For each rule (row in rule_indices), find the index of its mirror rule
         """
 
-        n_labels_tensor = torch.tensor(n_labels)
-
         # Compute mirrored rules according to variable types
         mirrored_rules = self.rule_indices.clone()
         k = 0
-        while k < len(var_types):
-            vtype = var_types[k]
-
+        for vtype in self.var_configs:
             if vtype == "difference":
                 # flip label index: i -> (L - 1 - i)
                 mirrored_rules[:, k] = n_labels[k] - 1 - self.rule_indices[:, k]
                 k += 1
 
-            elif vtype == "paired_absolute":
+            elif vtype == "paired":
                 # swap paired variables (assumes k and k + 1 are the pair)
                 mirrored_rules[:, k] = self.rule_indices[:, k + 1]
                 mirrored_rules[:, k + 1] = self.rule_indices[:, k]
@@ -134,21 +155,20 @@ class SymmetricEvaluator(nn.Module):
         batch = (batch - self.X_mean) / self.X_std
 
         n_samples = batch.shape[0]
-        n_rules, n_vars = self.rule_indices.shape
+
+        # Get per-feature membership parameters
+        center_sigma_sq = torch.exp(self.log_center_sigma_sq_raw[self.var_indices])
+        sigmoid_slope = torch.exp(self.log_sigmoid_slope[self.var_indices])
+        sigmoid_center = self.sigmoid_center_raw[self.var_indices]
 
         # Evaluate membership to central labels
         mu_center = torch.exp(
-            -0.5
-            * torch.divide(batch**2, torch.exp(self.log_center_sigma_sq_raw) + 1e-8)
+            -0.5 * torch.divide(batch**2, center_sigma_sq + 1e-8)
         )  # should be (n_samples, n_vars)
 
         # Evaluate membership to extreme labels
-        mu_right = torch.sigmoid(
-            torch.exp(self.log_sigmoid_slope) * (batch - self.sigmoid_center_raw)
-        )
-        mu_left = torch.sigmoid(
-            -torch.exp(self.log_sigmoid_slope) * (batch + self.sigmoid_center_raw)
-        )
+        mu_right = torch.sigmoid(sigmoid_slope * (batch - sigmoid_center))
+        mu_left = torch.sigmoid(-sigmoid_slope * (batch + sigmoid_center))
 
         memberships = torch.stack((mu_left, mu_center, mu_right), dim=2)
 
