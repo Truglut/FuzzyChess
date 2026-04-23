@@ -125,7 +125,10 @@ class SymmetricEvaluator(nn.Module):
         rule_indices = list(itertools.product(*membership_idx))
         n_rules = len(rule_indices)
         self.register_buffer(
-            "rule_indices_T", torch.tensor(rule_indices.T, dtype=torch.long)
+            "rule_indices_T", torch.tensor(rule_indices, dtype=torch.long).T
+        )
+        self.register_buffer(
+            "rule_indices", torch.tensor(rule_indices, dtype=torch.long)
         )
 
         # Determine mirror pairings

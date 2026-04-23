@@ -62,11 +62,11 @@ model = SymmetricEvaluator(
 
 ## Training specs
 # Optimizer and loss
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 loss_fn = nn.MSELoss()
 
 # Number of epochs
-n_epochs = 150
+n_epochs = 300
 
 # Keep track of losses for graph
 training_losses = []
@@ -129,12 +129,12 @@ save = input("Save model? (y/n):").strip().lower()
 
 if save in ["y", "yes"]:
     checkpoint = {
-        "model_state_dict": model.state_dict,
+        "model_state_dict": model.state_dict(),
         "feature_cols": FEATURE_COLS,
         "var_configs": VAR_CONFIGS,
         "n_labels": n_labels
     }
 
-    model_path = "models/model_checkpoint.pth"
-    torch.save(checkpoint, "models/model_checkpoint.pth")
+    model_path = "src/models/model_checkpoint.pth"
+    torch.save(checkpoint, model_path)
     print(f"Model checkpoint saved as {model_path}")
