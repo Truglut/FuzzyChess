@@ -123,8 +123,9 @@ class SymmetricEvaluator(nn.Module):
 
         membership_idx = [list(range(n)) for n in n_labels]
         rule_indices = list(itertools.product(*membership_idx))
+        n_rules = len(rule_indices)
         self.register_buffer(
-            "rule_indices", torch.tensor(rule_indices, dtype=torch.long)
+            "rule_indices_T", torch.tensor(rule_indices.T, dtype=torch.long)
         )
 
         # Determine mirror pairings
@@ -132,7 +133,6 @@ class SymmetricEvaluator(nn.Module):
         self.register_buffer("mirror_indices", mirror_indices)
 
         # Determine free rule consequents
-        n_rules = len(rule_indices)
         is_free = torch.arange(n_rules, device=mirror_indices.device) < mirror_indices
         self.register_buffer("is_free", is_free)
 
@@ -196,6 +196,19 @@ class SymmetricEvaluator(nn.Module):
 
         # self-mirror rules stay 0 by default 0-initialization
         return consequents
+    
+    def _build_consequents_cached(self):
+        if not hasattr(self, "_cached_consequents"):
+            self._cached_consequents = None
+
+        if self.training:
+            self._cached_consequents = None  # invalidate during training
+
+        if self._cached_consequents is None:
+            self._cached_consequents = self._build_consequents()
+
+        return self._cached_consequents
+
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         # batch size: (n_samples, n_vars)
@@ -235,7 +248,7 @@ class SymmetricEvaluator(nn.Module):
         # TODO: membership padding in case different variables have different n_labels
 
         # Rule antecedent evaluation
-        idx = self.rule_indices.T.unsqueeze(0).expand(n_samples, -1, -1)
+        idx = self.rule_indices_T.unsqueeze(0).expand(n_samples, -1, -1)
         per_var_rule_ant = torch.gather(memberships, dim=2, index=idx)
 
         # Log of the firing strengths for each rule   shape: (n_samples, n_rules)
@@ -244,5 +257,5 @@ class SymmetricEvaluator(nn.Module):
         # Transform into weights through softmax
         weights = torch.softmax(log_firing_strength, dim=1)  # (n_rules, )
 
-        consequents = self._build_consequents()  # (n_rules, )
+        consequents = self._build_consequents_cached()  # (n_rules, )
         return (weights * consequents).sum(dim=1)
