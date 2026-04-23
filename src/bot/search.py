@@ -1,4 +1,5 @@
 import chess
+from src.features.extractors import get_material_count
 from typing import Callable, Tuple
 
 
@@ -11,12 +12,21 @@ def alpha_beta_search(
     alpha: float = -float("inf"),
     beta: float = float("inf"),
     depth: int = 2,
-) -> Tuple[chess.Move, float]:
+) -> Tuple[chess.Move | None, float]:
     """
-    Performs a basic minimax alpha-beta search on the chess board and returns 
-    the best move and its evaluation, all according to the eval_function.
-    We assume the player to move has legal moves, i.e. they are not in checkmate
-    or stalemate.
+    Performs a minimax alpha-beta search (negamax variant) to find the best move.
+    
+    Args:
+        board: The current python-chess Board.
+        eval_function: A function returning the absolute static evaluation of the board 
+                       (Positive = White advantage, Negative = Black advantage).
+        alpha: The minimum score the maximizing player is assured of.
+        beta: The maximum score the minimizing player is assured of.
+        depth: The remaining depth to search in the tree.
+
+    Returns:
+        A tuple containing the best legal move (or None if the game is over) 
+        and its evaluation score from the perspective of the player to move.
     """
 
     # Check for game over
