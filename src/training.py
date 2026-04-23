@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader, random_split
 from .evaluation import SymmetricEvaluator
 import matplotlib.pyplot as plt
+from .model_visualization import plot_membership_functions, print_fuzzy_rules
 
 DATA_PATH = "data/positions/features_lichess_2013.csv"
 FEATURE_COLS = [
@@ -13,18 +14,9 @@ FEATURE_COLS = [
     "material_count",
 ]
 VAR_CONFIGS = [
-    {
-        "paired": True,
-        "learnable_center": True
-    },
-    {
-        "paired": False,
-        "learnable_center": False
-    },
-    {
-        "paired": False,
-        "learnable_center": False
-    }
+    {"name": "king_safety", "paired": True, "learnable_center": True},
+    {"name": "center_control", "paired": False, "learnable_center": False},
+    {"name": "material_count", "paired": False, "learnable_center": False},
 ]
 VAR_TYPES = [
     "paired",
@@ -42,7 +34,8 @@ df = pd.read_csv(DATA_PATH)
 X = torch.tensor(df[FEATURE_COLS].values, dtype=torch.float32)
 y = torch.tensor(df[TARGET_COL].values, dtype=torch.float32)
 y = torch.clamp(y, min=-10, max=10)
-y = y / y.std()
+y_std = y.std()
+y = y / y_std
 
 dataset = TensorDataset(X, y)
 
@@ -69,11 +62,11 @@ model = SymmetricEvaluator(
 
 ## Training specs
 # Optimizer and loss
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
 loss_fn = nn.MSELoss()
 
 # Number of epochs
-n_epochs = 25
+n_epochs = 150
 
 # Keep track of losses for graph
 training_losses = []
@@ -119,6 +112,29 @@ plt.ylabel("Loss")
 plt.title("Training vs Validation Loss")
 plt.show()
 
-
-plt.hist(y.detach().cpu().numpy())
+# Plot evaluation distributions
+plt.hist((y * y_std).detach().cpu().numpy())
 plt.show()
+
+## Model evaluation for interpretability
+for var_idx, var_config in enumerate(VAR_CONFIGS):
+    var_name = var_config["name"]
+    plot_membership_functions(model, var_idx, var_name, -10, 10)
+
+print_fuzzy_rules(model, FEATURE_COLS)
+
+# Ask user whether to save the model
+
+save = input("Save model? (y/n):").strip().lower()
+
+if save in ["y", "yes"]:
+    checkpoint = {
+        "model_state_dict": model.state_dict,
+        "feature_cols": FEATURE_COLS,
+        "var_configs": VAR_CONFIGS,
+        "n_labels": n_labels
+    }
+
+    model_path = "models/model_checkpoint.pth"
+    torch.save(checkpoint, "models/model_checkpoint.pth")
+    print(f"Model checkpoint saved as {model_path}")
