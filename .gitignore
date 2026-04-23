@@ -1,6 +1,8 @@
 # Do not track raw data
 data/positions
 data/luts
+src/models/*
+!src/models/.gitkeep
 
 
 # My ignored files
