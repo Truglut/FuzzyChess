@@ -1,4 +1,5 @@
 import chess
+from typing import Tuple
 from .utils import *
 
 
@@ -125,3 +126,46 @@ def get_material_count(board: chess.Board):
         material_count -= value * board.pieces_mask(piece_type, chess.BLACK).bit_count()
 
     return material_count
+
+## Pawn structure features
+# Number of pawns undefended by other pawns
+def count_undefended_pawns(pawn_bitboard: int, color: chess.Color) -> int:
+    return (pawn_bitboard & (~get_pawn_attacks_bitboard(pawn_bitboard, color))).bit_count()
+
+
+# Number of pawn islands
+def count_pawn_islands(pawn_bitboard:int) -> int:
+    # Collapse pawn bitboard onto first rank
+    collapsed = collapse_bitboard_by_file(pawn_bitboard)
+
+    # Count number of pawn islands (pawns that don't have a pawn to their right)
+    return (collapsed & (~ (collapsed << 1))).bit_count()
+
+
+# Number of squares advanced by friendly pawns
+def count_advanced_squares(pawn_bitboard: int, color: chess.Color) -> int:
+    total_advanced = 0
+    if color:
+        total_advanced += (pawn_bitboard & chess.BB_RANK_3).bit_count() * 1
+        total_advanced += (pawn_bitboard & chess.BB_RANK_4).bit_count() * 2
+        total_advanced += (pawn_bitboard & chess.BB_RANK_5).bit_count() * 3
+        total_advanced += (pawn_bitboard & chess.BB_RANK_6).bit_count() * 4
+        total_advanced += (pawn_bitboard & chess.BB_RANK_7).bit_count() * 5
+    else:
+        total_advanced += (pawn_bitboard & chess.BB_RANK_2).bit_count() * 5
+        total_advanced += (pawn_bitboard & chess.BB_RANK_3).bit_count() * 4
+        total_advanced += (pawn_bitboard & chess.BB_RANK_4).bit_count() * 3
+        total_advanced += (pawn_bitboard & chess.BB_RANK_5).bit_count() * 2
+        total_advanced += (pawn_bitboard & chess.BB_RANK_6).bit_count() * 1
+
+    return total_advanced
+    
+
+def get_pawn_structure_params(board: chess.Board, color: chess.Color) -> Tuple[int, int, int]:
+    pawn_bitboard = board.pawns & board.occupied_co[color]
+
+    return (
+        count_advanced_squares(pawn_bitboard, color),
+        count_undefended_pawns(pawn_bitboard, color),
+        count_pawn_islands(pawn_bitboard)
+    )

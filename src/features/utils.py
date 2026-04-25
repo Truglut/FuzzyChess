@@ -62,3 +62,32 @@ def count_attackers_in_mask(
         total += attackers_mask(color, sq).bit_count()
 
     return total
+
+
+def get_pawn_attacks_bitboard(
+    pawns_bitboard: chess.Bitboard, color: chess.Color
+) -> chess.Bitboard:
+    if color:
+        return ((pawns_bitboard << 7) & ~chess.BB_FILE_A) | (
+            (pawns_bitboard << 9) & ~chess.BB_FILE_H
+        )
+
+    return ((pawns_bitboard >> 7) & ~chess.BB_FILE_H) | (
+        (pawns_bitboard >> 9) & ~chess.BB_FILE_A
+    )
+
+
+def collapse_bitboard_by_file(bb: chess.Bitboard) -> chess.Bitboard:
+    bb |= bb >> 8
+    bb |= bb >> 16
+    bb |= bb >> 32
+    return bb & 0xFF
+
+
+def get_adjacent_files_bitboard(file: int) -> chess.Bitboard:
+    if file == 0:
+        return chess.BB_FILE_A | chess.BB_FILE_B | chess.BB_FILE_C
+    elif file == 7:
+        return chess.BB_FILE_H | chess.BB_FILE_G | chess.BB_FILE_F
+
+    return chess.BB_FILES[file - 1] | chess.BB_FILES[file] | chess.BB_FILES[file + 1]

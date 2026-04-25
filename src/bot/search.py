@@ -51,8 +51,6 @@ def alpha_beta_search(
             max_depth=max_quiescence_depth,
             cur_depth=depth,
         )
-        color_multiplier = 1 if board.turn else -1
-        return None, color_multiplier * eval_function(board)
 
     # Initialize evaluation to extreme value and best move to None
     best_eval = -float("inf")
