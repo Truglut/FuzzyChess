@@ -1,5 +1,8 @@
 import torch
 import chess
+from pathlib import Path
+from typing import Callable
+
 from .search import alpha_beta_search
 from ..evaluation import SymmetricEvaluator
 from ..features.extractors import get_material_count
@@ -7,7 +10,9 @@ from ..features.fis.center_control import CenterControlFIS, CENTER_LUT_PATH
 from ..features.fis.king_safety import KingSafetyFIS, KING_SAFETY_LUT_PATH
 
 
-MODEL_CHECKPOINT_PATH = "../models/model_checkpoint.pth"
+CURRENT_DIR = Path(__file__).resolve().parent
+
+MODEL_CHECKPOINT_PATH = CURRENT_DIR.parent / "models" / "model_checkpoint_2304_1923.pth"
 checkpoint = torch.load(MODEL_CHECKPOINT_PATH, map_location="cpu")
 
 n_vars = len(checkpoint["feature_cols"])
@@ -35,7 +40,7 @@ def extract_features(board: chess.Board) -> tuple:
 
 
 def evaluate_board(board: chess.Board) -> float:
-    features = torch.tensor(extract_features(board))
+    features = torch.tensor(extract_features(board)).view(1, -1)
 
     with torch.inference_mode():
         score = model(features).item()
@@ -43,5 +48,25 @@ def evaluate_board(board: chess.Board) -> float:
     return score
 
 
-def choose_move(board: chess.Board) -> chess.Move:
-    return alpha_beta_search(board, evaluate_board)[0]
+def null_eval(board: chess.Board) -> float:
+    return 0.0
+
+
+def material_eval(board: chess.Board) -> float:
+    return get_material_count(board)
+
+
+EVAL_FUNCTION_REGISTRY = {
+    "trained": evaluate_board,
+    "null": null_eval,
+    "material": material_eval,
+}
+
+
+def choose_move(
+    board: chess.Board,
+    depth: int = 2,
+    eval_function: Callable[[chess.Board], float] = evaluate_board,
+    use_quiescence: bool = False,
+) -> chess.Move:
+    return alpha_beta_search(board, eval_function, depth=depth)[0]

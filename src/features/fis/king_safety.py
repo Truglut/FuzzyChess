@@ -1,8 +1,12 @@
 import chess
+from pathlib import Path
+
 from .base import FIS
 from src.features.extractors import get_king_safety_params
 
-KING_SAFETY_LUT_PATH = "data/luts/safety_lut.npy"
+CURRENT_DIR = Path(__file__).resolve().parent
+
+KING_SAFETY_LUT_PATH = CURRENT_DIR.parent.parent.parent / "data" /"luts" / "safety_lut.npy"
 MAX_KING_ATTACKERS_DIFF = 4
 MIN_KING_ATTACKERS_DIFF = -4
 

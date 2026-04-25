@@ -1,8 +1,12 @@
 import chess
+from pathlib import Path
+
 from .base import FIS
 from src.features.extractors import get_center_params
 
-CENTER_LUT_PATH = "data/luts/center_lut.npy"
+CURRENT_DIR = Path(__file__).resolve().parent
+
+CENTER_LUT_PATH = CURRENT_DIR.parent.parent.parent / "data" / "luts" / "center_lut.npy"
 MIN_CENTER_ATT_DIFF = -10
 MAX_CENTER_ATT_DIFF = 10
 MIN_CENTER_OCC_DIFF = -4
