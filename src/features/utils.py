@@ -68,12 +68,12 @@ def get_pawn_attacks_bitboard(
     pawns_bitboard: chess.Bitboard, color: chess.Color
 ) -> chess.Bitboard:
     if color:
-        return ((pawns_bitboard << 7) & ~chess.BB_FILE_A) | (
-            (pawns_bitboard << 9) & ~chess.BB_FILE_H
+        return ((pawns_bitboard << 7) & ~chess.BB_FILE_H) | (
+            (pawns_bitboard << 9) & ~chess.BB_FILE_A
         )
 
-    return ((pawns_bitboard >> 7) & ~chess.BB_FILE_H) | (
-        (pawns_bitboard >> 9) & ~chess.BB_FILE_A
+    return ((pawns_bitboard >> 7) & ~chess.BB_FILE_A) | (
+        (pawns_bitboard >> 9) & ~chess.BB_FILE_H
     )
 
 
