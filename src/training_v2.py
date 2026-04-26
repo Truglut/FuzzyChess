@@ -6,25 +6,23 @@ from .evaluation_v2 import SymmetricEvaluator
 import matplotlib.pyplot as plt
 from .model_visualization import plot_membership_functions, print_fuzzy_rules
 
-DATA_PATH = "data/positions/features_lichess_2013.csv"
+DATA_PATH = "data/positions/features_v2.csv"
 FEATURE_COLS = [
     "king_safety_white",
     "king_safety_black",
     "center_control",
+    "pawn_structure_white",
+    "pawn_structure_black",
+    "mobility_white",
+    "mobility_black",
     "material_count",
 ]
 VAR_CONFIGS = [
     {"name": "king_safety", "paired": True, "learnable_center": True},
     {"name": "center_control", "paired": False, "learnable_center": False},
+    {"name": "pawn_structure", "paired": True, "learnable_center": True},
+    {"name": "mobility", "paired": True, "learnable_center": True},
     {"name": "material_count", "paired": False, "learnable_center": False},
-]
-VAR_TYPES = [
-    "paired",
-    "difference",
-    "difference",
-]
-PAIRED_VARS = [
-    (0, 1),  # white and black king safety
 ]
 TARGET_COL = "Stockfish_Eval"
 
@@ -55,15 +53,16 @@ n_vars = len(FEATURE_COLS)
 n_labels = 3
 model = SymmetricEvaluator(
     var_configs=VAR_CONFIGS,
+    antecedent_length=4
 )
 
 ## Training specs
 # Optimizer and loss
-optimizer = torch.optim.Adam(model.parameters(), lr=1e3)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 loss_fn = nn.MSELoss()
 
 # Number of epochs
-n_epochs = 750
+n_epochs = 100
 
 # Keep track of losses for graph
 training_losses = []
