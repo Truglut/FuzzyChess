@@ -1,9 +1,7 @@
 import torch
 import chess
 from pathlib import Path
-from typing import Callable
 
-from .search import alpha_beta_search
 from ..evaluation import SymmetricEvaluator
 from ..features.extractors import get_material_count
 from ..features.fis.center_control import CenterControlFIS, CENTER_LUT_PATH
@@ -61,12 +59,3 @@ EVAL_FUNCTION_REGISTRY = {
     "null": null_eval,
     "material": material_eval,
 }
-
-
-def choose_move(
-    board: chess.Board,
-    depth: int = 2,
-    eval_function: Callable[[chess.Board], float] = evaluate_board,
-    use_quiescence: bool = False,
-) -> chess.Move:
-    return alpha_beta_search(board, eval_function, depth=depth)[0]

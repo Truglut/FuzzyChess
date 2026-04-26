@@ -29,6 +29,7 @@ class Searcher:
         beta: float = float("inf"),
         depth: int = 2,
         max_quiescence_depth: int | None = 10,
+        use_quiescence: bool = True
     ) -> Tuple[chess.Move | None, float]:
         self.nodes_searched += 1
 
@@ -48,14 +49,16 @@ class Searcher:
         
         # If depth is zero, start quiescence search
         if depth == 0:
-            return self.quiescence_search(
-                board,
-                eval_function,
-                alpha,
-                beta,
-                max_depth=max_quiescence_depth,
-                cur_depth=depth,
-            )
+            if use_quiescence:
+                return self.quiescence_search(
+                    board,
+                    eval_function,
+                    alpha,
+                    beta,
+                    max_depth=max_quiescence_depth,
+                    cur_depth=depth,
+                )
+            return eval_function(board)
 
         # Initialize evaluation to extreme value and best move to None
         best_eval = -float("inf")

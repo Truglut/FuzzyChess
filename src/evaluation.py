@@ -199,7 +199,7 @@ class SymmetricEvaluator(nn.Module):
 
         # self-mirror rules stay 0 by default 0-initialization
         return consequents
-    
+
     def _build_consequents_cached(self):
         if not hasattr(self, "_cached_consequents"):
             self._cached_consequents = None
@@ -211,7 +211,6 @@ class SymmetricEvaluator(nn.Module):
             self._cached_consequents = self._build_consequents()
 
         return self._cached_consequents
-
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor:
         # batch size: (n_samples, n_vars)

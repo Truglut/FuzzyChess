@@ -1,5 +1,6 @@
 import chess
-from src.bot.choose_move import choose_move, extract_features, EVAL_FUNCTION_REGISTRY
+from src.bot.board_evaluation import extract_features, EVAL_FUNCTION_REGISTRY
+from src.bot.searcher import Searcher
 import sys
 import argparse
 
@@ -27,6 +28,9 @@ def main():
     # Initialize the board
     board = chess.Board()
 
+    # Initialize searching algorithm
+    searcher = Searcher(tt_size_mb=64)
+
     # The infinite loop that listens to the GUI
     while True:
         try:
@@ -48,6 +52,7 @@ def main():
 
             elif command == "ucinewgame":
                 board.reset()
+                searcher.clear_tt()
 
             elif command == "position":
                 # The GUI sends the board state. This handles both normal starts and custom FENs.
@@ -71,7 +76,7 @@ def main():
 
             elif command == "go":
                 # Choose best move
-                best_move = choose_move(
+                best_move, best_eval = searcher.alpha_beta_search(
                     board,
                     depth=args.depth,
                     eval_function=eval_function,
@@ -85,9 +90,13 @@ def main():
                 print(f"info string Seguridad Rey Negro:  {features[1]:.2f}")
                 print(f"info string Control Central:      {features[2]:.2f}")
                 print(f"info string Material:             {features[3]:.2f}")
+                print(f"info string Evaluación:           {best_eval}")
 
                 # Send the chosen move back to the GUI
-                print(f"bestmove {best_move.uci()}")
+                if best_move is None:
+                    print("bestmove (none)")
+                else:
+                    print(f"bestmove {best_move.uci()}")
 
             elif command == "quit":
                 break
@@ -97,6 +106,8 @@ def main():
 
         except Exception as e:
             # Failsafe so a crash doesn't permanently freeze the GUI
+            print(f"info string Engine crashed: {e}")
+            sys.stdout.flush()
             pass
 
 

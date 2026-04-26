@@ -1,7 +1,7 @@
 import time
 import chess
 from src.bot.searcher import Searcher 
-from src.bot.choose_move import evaluate_board
+from src.bot.board_evaluation import evaluate_board
 
 def run_benchmark():
     # 1. Start position
