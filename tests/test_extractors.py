@@ -1,12 +1,6 @@
 import pytest
 import chess
-from src.features.extractors import (
-    count_pieces_in_mask,
-    count_attackers_in_mask,
-    get_king_attackers_diff,
-    get_pawn_shield_metric,
-    CENTRAL_MASK,
-)
+from src.features.extractors import *
 from positions import *
 
 
@@ -89,3 +83,26 @@ def test_get_king_attackers_diff(make_board, position, color, expected):
 def test_get_pawn_shield_metric(make_board, position, color, expected):
     board = make_board(position)
     assert get_pawn_shield_metric(board, color) == expected
+
+
+@pytest.mark.parametrize(
+    "position, color, expected", [
+        # Initial position
+        (INITIAL, chess.WHITE, 6),
+        (INITIAL, chess.BLACK, 6),
+        # Test doubled pawns and pawns on same rank as the king
+        (WHITE_DOUBLED_PAWNS, chess.WHITE, 4),
+        (KINGS_WITH_PAWNS, chess.WHITE, 4),
+        (KINGS_WITH_PAWNS, chess.BLACK, 5),
+        # Test king on one of the edge files
+        ("8/8/8/8/8/P1P5/KPP5/8 w - - 0 1", chess.WHITE, 5),
+        ("8/8/8/8/5P2/7P/6PK/8 w - - 0 1", chess.WHITE, 4),
+        # Test king on enemy backrank or second-to-last rank
+        (KINGS_CLOSETO_BACKRANKS, chess.WHITE, 0),
+        (KINGS_CLOSETO_BACKRANKS, chess.BLACK, 0)
+    ]
+)
+def test_calculate_pawn_shield(make_board, position, color, expected):
+    board = make_board(position)
+    pawn_bitboard = board.pawns & board.occupied_co[color]
+    assert calculate_pawn_shield(board, color, pawn_bitboard) == expected

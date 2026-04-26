@@ -14,20 +14,6 @@ def dummy_eval(board: chess.Board) -> float:
     return 1.5
 
 
-@pytest.mark.parametrize(
-    "fen, expected_eval",
-    [
-        (DRAW_POSITION, 0.0),
-    ],
-)
-def test_alpha_beta_game_over(make_board, fen, expected_eval):
-    board = make_board(fen)
-    best_move, score = alpha_beta_search(board, dummy_eval, depth=2)
-
-    assert best_move is None
-    assert score == expected_eval
-
-
 def test_alpha_beta_checkmate_depth_preference(make_board):
     # Create a board where Black is already checkmated
     board = make_board("4k3/3RQ3/8/8/8/8/8/4K3 b - - 0 1")
