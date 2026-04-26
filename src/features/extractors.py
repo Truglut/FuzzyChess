@@ -169,3 +169,50 @@ def get_pawn_structure_params(board: chess.Board, color: chess.Color) -> Tuple[i
         count_undefended_pawns(pawn_bitboard, color),
         count_pawn_islands(pawn_bitboard)
     )
+
+
+# King safety features v2
+def calculate_pawn_shield(
+    board: chess.Board, color: chess.Color, pawn_bitboard: int
+) -> int:
+    king_sq = board.king(color)
+
+    # Check for last or second-to-last ranks
+    king_rank = chess.square_rank(king_sq)
+    if (color and king_rank >= 6) or (not color and king_rank <= 1):
+        return 0
+
+    # Get bitboard for squares adjacent to the king
+    king_file = chess.square_file(king_sq)
+    king_adj_sq = get_adjacent_files_bitboard(king_file) & chess.BB_RANKS[king_rank]
+
+    # Calculate pawn metric
+    pawn_metric = 0
+    if color:
+        print("hi!")
+        pawn_metric += ((pawn_bitboard >> 8) & king_adj_sq).bit_count()
+        print(f"{pawn_metric = }")
+        pawn_metric += (
+            ((pawn_bitboard >> 8) | (pawn_bitboard >> 16) | pawn_bitboard) & king_adj_sq
+        ).bit_count()
+        print(f"{pawn_metric = }")
+        print("bye!")
+    else:
+        pawn_metric += ((pawn_bitboard << 8) & king_adj_sq).bit_count()
+        pawn_metric += (
+            ((pawn_bitboard << 8) | (pawn_bitboard << 16) | pawn_bitboard) & king_adj_sq
+        ).bit_count()
+
+    return pawn_metric
+
+
+def count_open_adjacent_files(
+    both_colors_pawns_bitboard: chess.Bitboard, file: int
+) -> int:
+    adj_files_bb = get_adjacent_files_bitboard(file)
+
+    local_pawns = both_colors_pawns_bitboard & adj_files_bb
+
+    collapsed_pawns = collapse_bitboard_by_file(local_pawns)
+
+    return 3 - collapsed_pawns.bit_count()
