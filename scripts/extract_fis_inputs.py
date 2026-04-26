@@ -3,13 +3,24 @@ import chess
 import argparse
 from src.features.fis.king_safety import KingSafetyFIS, KING_SAFETY_LUT_PATH
 from src.features.fis.center_control import CenterControlFIS, CENTER_LUT_PATH
+from src.features.fis.pawn_structure import StructureFIS, STRUCTURE_LUT_PATH
+from src.features.fis.mobility import MobilityFIS, MOBILITY_LUT_PATH
 from src.features.extractors import get_material_count
 
 
+safety_fis = KingSafetyFIS(KING_SAFETY_LUT_PATH)
+center_fis = CenterControlFIS(CENTER_LUT_PATH)
+structure_fis = StructureFIS(STRUCTURE_LUT_PATH)
+mobility_fis = MobilityFIS(MOBILITY_LUT_PATH)
+
 FEATURE_PIPELINE = {
-    "king_safety_white": KingSafetyFIS(KING_SAFETY_LUT_PATH, chess.WHITE),
-    "king_safety_black": KingSafetyFIS(KING_SAFETY_LUT_PATH, chess.BLACK),
+    "king_safety_white": lambda board: safety_fis.compute(board, chess.WHITE),
+    "king_safety_black": lambda board: safety_fis.compute(board, chess.BLACK),
     "center_control": CenterControlFIS(CENTER_LUT_PATH),
+    "pawn_structure_white": lambda board: structure_fis.compute(board, chess.WHITE),
+    "pawn_structure_black": lambda board: structure_fis.compute(board, chess.BLACK),
+    "mobility_white": lambda board: mobility_fis.compute(board, chess.WHITE),
+    "mobility_black": lambda board: mobility_fis.compute(board, chess.BLACK),
     "material_count": get_material_count,
 }
 
