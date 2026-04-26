@@ -15,6 +15,13 @@ PIECE_VALUES = {
     chess.QUEEN: 9,
 }
 
+# Constants for adjacent file masking to prevent shift wrapping
+NOT_A_FILE = 0xFEFEFEFEFEFEFEFE
+NOT_H_FILE = 0x7F7F7F7F7F7F7F7F
+
+# 64-bit mask to prevent integer expansion in Python during left shifts
+MASK_64 = 0xFFFFFFFFFFFFFFFF
+
 
 def count_pieces_in_mask_by_type(
     board: chess.Board,

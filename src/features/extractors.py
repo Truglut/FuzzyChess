@@ -127,19 +127,22 @@ def get_material_count(board: chess.Board):
 
     return material_count
 
+
 ## Pawn structure features
 # Number of pawns undefended by other pawns
 def count_undefended_pawns(pawn_bitboard: int, color: chess.Color) -> int:
-    return (pawn_bitboard & (~get_pawn_attacks_bitboard(pawn_bitboard, color))).bit_count()
+    return (
+        pawn_bitboard & (~get_pawn_attacks_bitboard(pawn_bitboard, color))
+    ).bit_count()
 
 
 # Number of pawn islands
-def count_pawn_islands(pawn_bitboard:int) -> int:
+def count_pawn_islands(pawn_bitboard: int) -> int:
     # Collapse pawn bitboard onto first rank
     collapsed = collapse_bitboard_by_file(pawn_bitboard)
 
     # Count number of pawn islands (pawns that don't have a pawn to their right)
-    return (collapsed & (~ (collapsed << 1))).bit_count()
+    return (collapsed & (~(collapsed << 1))).bit_count()
 
 
 # Number of squares advanced by friendly pawns
@@ -159,15 +162,17 @@ def count_advanced_squares(pawn_bitboard: int, color: chess.Color) -> int:
         total_advanced += (pawn_bitboard & chess.BB_RANK_6).bit_count() * 1
 
     return total_advanced
-    
 
-def get_pawn_structure_params(board: chess.Board, color: chess.Color) -> Tuple[int, int, int]:
+
+def get_pawn_structure_params(
+    board: chess.Board, color: chess.Color
+) -> Tuple[int, int, int]:
     pawn_bitboard = board.pawns & board.occupied_co[color]
 
     return (
         count_advanced_squares(pawn_bitboard, color),
         count_undefended_pawns(pawn_bitboard, color),
-        count_pawn_islands(pawn_bitboard)
+        count_pawn_islands(pawn_bitboard),
     )
 
 
@@ -216,3 +221,89 @@ def count_open_adjacent_files(
     collapsed_pawns = collapse_bitboard_by_file(local_pawns)
 
     return 3 - collapsed_pawns.bit_count()
+
+
+PIECE_MOBILITY_TYPES = [chess.KNIGHT, chess.BISHOP, chess.ROOK]
+
+
+def get_mobility_features(
+    board: chess.Board, color: chess.Color
+) -> tuple[int, int, int]:
+    enemy_pawn_attacks = get_pawn_attacks_bitboard(
+        board.pawns & board.occupied_co[not color], not color
+    )
+    piece_count = 0
+    total_safe_moves = 0
+    total_forward_moves = 0
+
+    forward_ranks = 0xFFFFFFFF00000000 if color else 0x00000000FFFFFFFF
+    for piece_type in PIECE_MOBILITY_TYPES:
+        pieces = board.pieces(piece_type, color)
+
+        for sq in pieces:
+            # Calculate types of moves
+            pseudo_legal_moves = board.attacks_mask(sq)
+            safe_moves = pseudo_legal_moves & (~enemy_pawn_attacks)
+            forward_moves = safe_moves & forward_ranks
+
+            # Update counts
+            total_forward_moves += forward_moves.bit_count()
+            total_safe_moves += safe_moves.bit_count()
+            piece_count += 1
+
+    return piece_count, total_safe_moves, total_forward_moves
+
+
+def get_king_distance_to_center(board: chess.Board, color: chess.Color) -> float:
+    king_sq = board.king(color)
+    king_rank = chess.square_rank(king_sq)
+    king_file = chess.square_file(king_sq)
+
+    return abs(king_rank - 3.5) + abs(king_file - 3.5)
+
+
+def count_passed_pawns(board: chess.Board, color: chess.Color) -> int:
+    enemy_pawn_bitboard = board.pawns & board.occupied_co[not color]
+    friend_pawn_bitboard = board.pawns & board.occupied_co[color]
+
+    # Calculate stop span from enemy pawns
+    if color:
+        span = enemy_pawn_bitboard >> 8
+
+        span |= span >> 8
+        span |= span >> 16
+        span |= span >> 32
+    else:
+        span = (enemy_pawn_bitboard << 8) & MASK_64
+
+        span |= (span << 8) & MASK_64
+        span |= (span << 16) & MASK_64
+        span |= (span << 32) & MASK_64
+
+    # Expand the stop span sideways to cover adjacent files
+    span |= ((span << 1) & NOT_A_FILE) | ((span >> 1) & NOT_H_FILE)
+
+    passed_pawns = friend_pawn_bitboard & (~span)
+
+    return collapse_bitboard_by_file(passed_pawns).bit_count()
+
+
+def calculate_min_distance_to_promotion(board: chess.Board, color: chess.Color) -> int:
+    pawns = board.pawns & board.occupied_co[color]
+
+    if not pawns:
+        return 8
+
+    if color:
+        # pawns.bit_length() - 1 is equivalent to chess.msb()
+        return 7 - ((pawns.bit_length() - 1) >> 3)
+    else:
+        # (pawns & -pawns).bit_length() - 1 is equivalent to chess.lsb()
+        return ((pawns & -pawns).bit_length() - 1) >> 3
+
+
+def get_promotion_chances_params(board: chess.Board, color: chess.Color) -> int:
+    return (
+        calculate_min_distance_to_promotion(board, color),
+        count_passed_pawns(board, color)
+    )
