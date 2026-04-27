@@ -5,13 +5,19 @@ from src.features.fis.king_safety import KingSafetyFIS, KING_SAFETY_LUT_PATH
 from src.features.fis.center_control import CenterControlFIS, CENTER_LUT_PATH
 from src.features.fis.pawn_structure import StructureFIS, STRUCTURE_LUT_PATH
 from src.features.fis.mobility import MobilityFIS, MOBILITY_LUT_PATH
-from src.features.extractors import get_material_count
+from src.features.fis.promotion import PromotionFIS, PROMOTION_LUT_PATH
+from src.features.extractors_board import (
+    get_material_count,
+    get_king_distance_to_center,
+    calculate_game_phase,
+)
 
 
 safety_fis = KingSafetyFIS(KING_SAFETY_LUT_PATH)
 center_fis = CenterControlFIS(CENTER_LUT_PATH)
 structure_fis = StructureFIS(STRUCTURE_LUT_PATH)
 mobility_fis = MobilityFIS(MOBILITY_LUT_PATH)
+promotion_fis = PromotionFIS(PROMOTION_LUT_PATH)
 
 FEATURE_PIPELINE = {
     "king_safety_white": lambda board: safety_fis.compute(board, chess.WHITE),
@@ -19,12 +25,27 @@ FEATURE_PIPELINE = {
     "center_control": CenterControlFIS(CENTER_LUT_PATH),
     "pawn_structure_white": lambda board: structure_fis.compute(board, chess.WHITE),
     "pawn_structure_black": lambda board: structure_fis.compute(board, chess.BLACK),
+    "pawn_structure_diff": lambda board: 0.5 * (structure_fis.compute(board, chess.WHITE)
+    - structure_fis.compute(board, chess.BLACK)),
     "mobility_white": lambda board: mobility_fis.compute(board, chess.WHITE),
     "mobility_black": lambda board: mobility_fis.compute(board, chess.BLACK),
+    "mobility_diff": lambda board: 0.5*(mobility_fis.compute(board, chess.WHITE)
+    - mobility_fis.compute(board, chess.BLACK)),
+    "king_distance_to_center_white": lambda board: get_king_distance_to_center(
+        board, chess.WHITE
+    ),
+    "king_distance_to_center_black": lambda board: get_king_distance_to_center(
+        board, chess.BLACK
+    ),
+    "promotion_chances_white": lambda board: promotion_fis.compute(board, chess.WHITE),
+    "promotion_chances_black": lambda board: promotion_fis.compute(board, chess.BLACK),
+    "promotion_chances_diff": lambda board: 0.5 * (promotion_fis.compute(board, chess.WHITE)
+    - promotion_fis.compute(board, chess.BLACK)),
     "material_count": get_material_count,
+    "game_phase": calculate_game_phase,
 }
 
-COLUMNS_KEEP = ["Turn", "Stockfish_Eval"]
+COLUMNS_KEEP = ["Stockfish_Eval"]
 
 
 def main():
