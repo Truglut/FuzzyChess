@@ -1,7 +1,7 @@
 import time
 import chess
-from src.bot.searcher import Searcher 
-from src.bot.board_evaluation import evaluate_board
+from src.fuzzychess.search.searcher import Searcher 
+from src.fuzzychess.evaluation.basic_evaluation import evaluate_board
 
 def run_benchmark():
     # 1. Start position

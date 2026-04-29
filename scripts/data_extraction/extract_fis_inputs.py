@@ -1,12 +1,12 @@
 import pandas as pd
 import chess
 import argparse
-from src.features.fis.king_safety import KingSafetyFIS, KING_SAFETY_LUT_PATH
-from src.features.fis.center_control import CenterControlFIS, CENTER_LUT_PATH
-from src.features.fis.pawn_structure import StructureFIS, STRUCTURE_LUT_PATH
-from src.features.fis.mobility import MobilityFIS, MOBILITY_LUT_PATH
-from src.features.fis.promotion import PromotionFIS, PROMOTION_LUT_PATH
-from src.features.extractors_board import (
+from src.fuzzychess.evaluation.features.fis.king_safety import KingSafetyFIS, KING_SAFETY_LUT_PATH
+from src.fuzzychess.evaluation.features.fis.center_control import CenterControlFIS, CENTER_LUT_PATH
+from src.fuzzychess.evaluation.features.fis.pawn_structure import StructureFIS, STRUCTURE_LUT_PATH
+from src.fuzzychess.evaluation.features.fis.mobility import MobilityFIS, MOBILITY_LUT_PATH
+from src.fuzzychess.evaluation.features.fis.promotion import PromotionFIS, PROMOTION_LUT_PATH
+from src.fuzzychess.evaluation.features.extractors_board import (
     get_material_count,
     get_king_distance_to_center,
     calculate_game_phase,

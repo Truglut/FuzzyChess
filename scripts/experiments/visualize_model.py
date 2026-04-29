@@ -1,5 +1,5 @@
-from src.tapered_bot.load_bot import load_bot
-from src.model_visualization import plot_membership_functions, print_fuzzy_rules
+from src.fuzzychess.bot.factory import load_bot
+from src.utils.model_visualization import plot_membership_functions, print_fuzzy_rules
 
 
 MG_FEATURE_COLS = [
