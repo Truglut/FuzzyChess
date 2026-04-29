@@ -1,6 +1,6 @@
 import pytest
 import chess
-from src.features.extractors_board import *
+from fuzzychess.evaluation.features.extractors_board import *
 
 INITIAL = chess.STARTING_FEN
 ADVANCEMENT_COUNTS = "rnbqkbnr/p2p1ppp/8/2p1p3/1p2P3/2P2P1P/PP1P2P1/RNBQKBNR w KQkq - 0 5"

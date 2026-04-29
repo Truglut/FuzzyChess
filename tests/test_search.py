@@ -1,6 +1,6 @@
 import pytest
 import chess
-from src.bot.search import alpha_beta_search
+from fuzzychess.search.search import alpha_beta_search
 from positions import INITIAL
 
 # FEN Constants for Testing

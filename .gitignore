@@ -1,6 +1,8 @@
 # Do not track raw data
-data/positions
-data/luts
+data/positions/*
+data/luts/*
+data/models/*
+!data/*/.gitkeep
 src/models/*
 !src/models/.gitkeep
 

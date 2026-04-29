@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fuzzychess"
+version = "0.1.0"
+description = "Fuzzy logic chess evaluation engine"
+authors = [{ name = "Tu Nombre" }]
+readme = "README.md"
+requires-python = ">=3.9"
+
+dependencies = [
+    "numpy",
+    "torch",
+    "chess"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

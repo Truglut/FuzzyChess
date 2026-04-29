@@ -1,6 +1,6 @@
 import pytest
 import chess
-from src.features.extractors_board import *
+from fuzzychess.evaluation.features.extractors_board import *
 from positions import *
 
 
