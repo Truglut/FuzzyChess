@@ -3,9 +3,9 @@ import torch
 from dataclasses import dataclass
 from typing import Literal
 
-from .tapered_evaluator import TaperedEvaluator
-from .features.fis.base import FIS
-from .features.extractors_cache import BoardCache
+from fuzzychess.evaluation.tapered import TaperedEvaluator
+from fuzzychess.evaluation.features.fis.base import FIS
+from fuzzychess.evaluation.features.extractors_cache import BoardCache
 
 
 # FIS registration descriptor

@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch
 
 
+
 class TaperedEvaluator(nn.Module):
     def __init__(self, mg_evaluator: nn.Module, eg_evaluator: nn.Module):
         """

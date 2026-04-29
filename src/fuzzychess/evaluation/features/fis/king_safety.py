@@ -1,12 +1,13 @@
 import chess
 from pathlib import Path
 
-from .base import FIS
-from src.features.extractors_board import get_king_safety_params
+from fuzzychess.config import ROOT
+from fuzzychess.evaluation.features.fis.base import FIS
+from fuzzychess.evaluation.features.extractors_board import get_king_safety_params
 
 CURRENT_DIR = Path(__file__).resolve().parent
 
-KING_SAFETY_LUT_PATH = CURRENT_DIR.parent.parent.parent / "data" /"luts" / "safety_lut.npy"
+KING_SAFETY_LUT_PATH = ROOT / "data" /"luts" / "safety_lut.npy"
 MAX_KING_ATTACKERS_DIFF = 4
 MIN_KING_ATTACKERS_DIFF = -4
 

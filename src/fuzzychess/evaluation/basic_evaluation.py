@@ -1,8 +1,9 @@
 import chess
 
-from ..features.extractors_board import get_material_count
+from fuzzychess.evaluation.features.extractors_board import get_material_count
 
 
+# Basic evaluation functions for debugging and testing
 def null_eval(board: chess.Board) -> float:
     return 0.0
 

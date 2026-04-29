@@ -2,15 +2,16 @@ import torch
 import chess
 from pathlib import Path
 
-from src.engine import FISEntry, EvaluationEngine
-from src.tapered_evaluator import TaperedEvaluator
-from src.evaluator import SymmetricEvaluator
-from src.features.fis.king_safety import KingSafetyFIS, KING_SAFETY_LUT_PATH
-from src.features.fis.center_control import CenterControlFIS, CENTER_LUT_PATH
-from src.features.fis.pawn_structure import StructureFIS, STRUCTURE_LUT_PATH
-from src.features.fis.mobility import MobilityFIS, MOBILITY_LUT_PATH
-from src.features.fis.promotion import PromotionFIS, PROMOTION_LUT_PATH
-from src.features.extractors_cache import (
+from fuzzychess.config import ROOT
+from fuzzychess.evaluation.engine import FISEntry, EvaluationEngine
+from fuzzychess.evaluation.tapered import TaperedEvaluator
+from fuzzychess.evaluation.evaluator import SymmetricEvaluator
+from fuzzychess.evaluation.features.fis.king_safety import KingSafetyFIS, KING_SAFETY_LUT_PATH
+from fuzzychess.evaluation.features.fis.center_control import CenterControlFIS, CENTER_LUT_PATH
+from fuzzychess.evaluation.features.fis.pawn_structure import StructureFIS, STRUCTURE_LUT_PATH
+from fuzzychess.evaluation.features.fis.mobility import MobilityFIS, MOBILITY_LUT_PATH
+from fuzzychess.evaluation.features.fis.promotion import PromotionFIS, PROMOTION_LUT_PATH
+from fuzzychess.evaluation.features.extractors_cache import (
     get_center_params,
     get_mobility_features,
     get_pawn_structure_params,
@@ -18,11 +19,8 @@ from src.features.extractors_cache import (
     get_promotion_chances_params,
 )
 
-
-CURRENT_DIR = Path(__file__).resolve().parent
-
-ANTECEDENT3_MODEL_CHECKPOINT_PATH = CURRENT_DIR.parent / "models" / "tapered_evaluator_antecedent_3.pth"
-ANTECEDENT2_MODEL_CHECKPOINT_PATH = CURRENT_DIR.parent / "models" / "tapered_evaluator_antecedent_2.pth"
+ANTECEDENT3_MODEL_CHECKPOINT_PATH = ROOT / "data" / "models" / "tapered_evaluator_antecedent_3.pth"
+ANTECEDENT2_MODEL_CHECKPOINT_PATH = ROOT / "data" / "models" / "tapered_evaluator_antecedent_2.pth"
 
 MG_FIS_ENTRIES = [
     FISEntry(

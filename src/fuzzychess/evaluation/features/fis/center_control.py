@@ -1,12 +1,10 @@
 import chess
-from pathlib import Path
 
-from .base import FIS
-from src.features.extractors_board import get_center_params
+from fuzzychess.config import ROOT
+from fuzzychess.evaluation.features.fis.base import FIS
+from fuzzychess.evaluation.features.extractors_board import get_center_params
 
-CURRENT_DIR = Path(__file__).resolve().parent
-
-CENTER_LUT_PATH = CURRENT_DIR.parent.parent.parent / "data" / "luts" / "center_lut.npy"
+CENTER_LUT_PATH = ROOT / "data" / "luts" / "center_lut.npy"
 MIN_CENTER_ATT_DIFF = -10
 MAX_CENTER_ATT_DIFF = 10
 MIN_CENTER_OCC_DIFF = -4

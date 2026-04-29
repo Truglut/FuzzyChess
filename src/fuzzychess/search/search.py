@@ -1,5 +1,4 @@
 import chess
-from src.features.extractors_board import get_material_count
 from typing import Callable, Tuple, Iterable
 
 
@@ -48,7 +47,7 @@ def alpha_beta_search(
     has_moves = False
 
     # Move search
-    ordered_moves = order_moves(board.legal_moves)
+    ordered_moves = order_moves(board, board.legal_moves)
     for move in ordered_moves:
         has_moves = True
 
@@ -92,30 +91,35 @@ def quiescence_search(
     max_depth: int = 10,
     cur_depth: int = 0,
 ):
-    # print("info string Going into quiescence search")
-    # Assume the current player can get at least the current board evaluation
-    color_multiplier = 1 if board.turn else -1
-    stand_pat = color_multiplier * eval_function(board)
-
-    # Beta cutoff
-    if stand_pat >= beta:
-        return None, stand_pat
-    alpha = max(alpha, stand_pat)
-
-    # Check for game over
-    if board.is_check():
+    is_check = board.is_check()
+    if is_check:
         if board.is_checkmate():
             return None, -CHECKMATE_SCORE - cur_depth
+        
+        best_eval = -float("inf")
         ordered_moves = order_moves(board, board.generate_legal_moves())
     else:
+        # Assume the current player can get at least the current board evaluation
+        color_multiplier = 1 if board.turn else -1
+        stand_pat = color_multiplier * eval_function(board)
+
+        # Beta cutoff
+        if stand_pat >= beta:
+            return None, stand_pat
+        
+        alpha = max(alpha, stand_pat)
+        best_eval = stand_pat
         ordered_moves = order_captures(board, board.generate_legal_captures())
 
     # If max_depth has been reached, return static evaluation
     if max_depth == 0:
+        if is_check:
+            color_multiplier = 1 if board.turn else -1
+            stand_pat = color_multiplier * eval_function(board)
         return None, stand_pat
 
     # Initialize evaluation to extreme value and best move to None
-    best_eval = stand_pat
+    # best_eval = stand_pat
     best_move = None
 
     # Move search: consider only captures

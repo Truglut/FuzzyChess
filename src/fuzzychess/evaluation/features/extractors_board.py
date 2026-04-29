@@ -1,6 +1,6 @@
 import chess
 from typing import Tuple
-from .utils import *
+from fuzzychess.evaluation.features.utils import *
 
 
 def get_center_piece_diff(board: chess.Board):

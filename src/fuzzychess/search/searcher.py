@@ -1,6 +1,6 @@
 import chess
-from typing import Callable, Tuple, Iterable
-from .search import order_captures, order_moves
+from typing import Callable, Tuple
+from fuzzychess.search.search import order_captures, order_moves
 
 CHECKMATE_SCORE = 10_000
 
@@ -20,7 +20,6 @@ class Searcher:
         """Clears the transpostion table"""
         self.tt = [None] * self.tt_size
 
-    
     def alpha_beta_search(
         self,
         board: chess.Board,
@@ -29,7 +28,7 @@ class Searcher:
         beta: float = float("inf"),
         depth: int = 2,
         max_quiescence_depth: int | None = 10,
-        use_quiescence: bool = True
+        use_quiescence: bool = True,
     ) -> Tuple[chess.Move | None, float]:
         self.nodes_searched += 1
 
@@ -42,11 +41,11 @@ class Searcher:
             cached_key, cached_depth, cached_eval, cached_move = tt_entry
             if cached_key == zobrist_key and cached_depth >= depth:
                 return cached_move, cached_eval
-            
+
         # Check for repetition draws
         if board.is_repetition(2):
             return None, 0.0
-        
+
         # If depth is zero, start quiescence search
         if depth == 0:
             if use_quiescence:
@@ -105,7 +104,6 @@ class Searcher:
         self.tt[tt_index] = (zobrist_key, depth, best_eval, best_move)
 
         return best_move, best_eval
-    
 
     def quiescence_search(
         self,
@@ -118,32 +116,37 @@ class Searcher:
     ):
         self.nodes_searched += 1
 
-        # Assume the current player can get at least the current board evaluation
-        color_multiplier = 1 if board.turn else -1
-        stand_pat = color_multiplier * eval_function(board)
-
-        # Beta cutoff
-        if stand_pat >= beta:
-            return None, stand_pat
-        alpha = max(alpha, stand_pat)
-
-        # Check for game over
-        if board.is_check():
+        is_check = board.is_check()
+        if is_check:
             if board.is_checkmate():
                 return None, -CHECKMATE_SCORE - cur_depth
+
+            best_eval = -float("inf")
             ordered_moves = order_moves(board, board.generate_legal_moves())
         else:
+            # Assume the current player can get at least the current board evaluation
+            color_multiplier = 1 if board.turn else -1
+            stand_pat = color_multiplier * eval_function(board)
+
+            # Beta cutoff
+            if stand_pat >= beta:
+                return None, stand_pat
+
+            alpha = max(alpha, stand_pat)
+            best_eval = stand_pat
             ordered_moves = order_captures(board, board.generate_legal_captures())
 
         # If max_depth has been reached, return static evaluation
         if max_depth == 0:
+            if is_check:
+                color_multiplier = 1 if board.turn else -1
+                stand_pat = color_multiplier * eval_function(board)
             return None, stand_pat
 
-        # Initialize evaluation to extreme value and best move to None
-        best_eval = stand_pat
+        # Initialize best move to None
         best_move = None
 
-        # Move search: consider only captures
+        # Move search: consider only captures (or evasions if in check)
         for move in ordered_moves:
             board.push(move)
 
@@ -173,4 +176,3 @@ class Searcher:
                 break
 
         return best_move, best_eval
-        

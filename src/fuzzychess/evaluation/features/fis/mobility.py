@@ -1,16 +1,16 @@
 import chess
 from pathlib import Path
 
-from .base import FIS
-from src.features.extractors_board import get_mobility_features
+from fuzzychess.config import ROOT
+from fuzzychess.evaluation.features.fis.base import FIS
+from fuzzychess.evaluation.features.extractors_board import get_mobility_features
 
 CURRENT_DIR = Path(__file__).resolve().parent
 
-MOBILITY_LUT_PATH = CURRENT_DIR.parent.parent.parent / "data" /"luts" / "mobility_lut.npy"
+MOBILITY_LUT_PATH = ROOT / "data" / "luts" / "mobility_lut.npy"
 MAX_PIECE_COUNT = 6
 MAX_TOTAL_SAFE_MOVES = 80
 MAX_FORWARD_SAFE_MOVES = 49
-
 
 
 class MobilityFIS(FIS):

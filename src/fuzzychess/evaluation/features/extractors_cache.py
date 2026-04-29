@@ -1,6 +1,6 @@
 import chess
 from dataclasses import dataclass
-from .utils import (
+from fuzzychess.evaluation.features.utils import (
     CENTRAL_MASK,
     PIECE_VALUES,
     MASK_64,

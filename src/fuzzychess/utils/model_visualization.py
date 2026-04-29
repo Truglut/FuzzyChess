@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
-from .evaluator import SymmetricEvaluator
+from fuzzychess.evaluation.evaluator import SymmetricEvaluator
 
 
 def plot_membership_functions(
