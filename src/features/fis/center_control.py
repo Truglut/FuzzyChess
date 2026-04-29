@@ -2,7 +2,7 @@ import chess
 from pathlib import Path
 
 from .base import FIS
-from src.features.extractors import get_center_params
+from src.features.extractors_board import get_center_params
 
 CURRENT_DIR = Path(__file__).resolve().parent
 

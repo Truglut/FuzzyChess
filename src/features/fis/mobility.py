@@ -2,7 +2,7 @@ import chess
 from pathlib import Path
 
 from .base import FIS
-from src.features.extractors import get_mobility_features
+from src.features.extractors_board import get_mobility_features
 
 CURRENT_DIR = Path(__file__).resolve().parent
 

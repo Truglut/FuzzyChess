@@ -1,5 +1,5 @@
 import chess
-from src.features.extractors import get_material_count
+from src.features.extractors_board import get_material_count
 from typing import Callable, Tuple, Iterable
 
 
