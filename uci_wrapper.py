@@ -1,5 +1,6 @@
 import chess
-from src.bot.board_evaluation import extract_features, EVAL_FUNCTION_REGISTRY
+from src.bot.board_evaluation import get_material_count, null_eval
+from src.tapered_bot.load_bot import load_bot
 from src.bot.searcher import Searcher
 import sys
 import argparse
@@ -23,7 +24,15 @@ def main():
 
     args = parser.parse_args()
 
-    eval_function = EVAL_FUNCTION_REGISTRY[args.eval_type]
+    if args.eval_type == "trained":
+        eval_engine = load_bot()
+        eval_function = lambda board: eval_engine.evaluate(board)
+    elif args.eval_type == "material":
+        eval_function = get_material_count
+    elif args.eval_type == "null":
+        eval_function = null_eval
+    else:
+        raise ValueError(f"Unrecognised eval type: {args.eval_type}")
 
     # Initialize the board
     board = chess.Board()
@@ -82,15 +91,6 @@ def main():
                     eval_function=eval_function,
                     use_quiescence=args.quiescence,
                 )
-
-                features = extract_features(board)
-
-                print(f"info string Características de la posición")
-                print(f"info string Seguridad Rey Blanco: {features[0]:.2f}")
-                print(f"info string Seguridad Rey Negro:  {features[1]:.2f}")
-                print(f"info string Control Central:      {features[2]:.2f}")
-                print(f"info string Material:             {features[3]:.2f}")
-                print(f"info string Evaluación:           {best_eval}")
 
                 # Send the chosen move back to the GUI
                 if best_move is None:
