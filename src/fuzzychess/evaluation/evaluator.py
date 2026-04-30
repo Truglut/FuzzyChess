@@ -317,7 +317,7 @@ class SymmetricEvaluator(nn.Module):
             self._cached_consequents = None
             self._cached_membership_params = None
         return self
-    
+
     def set_input_scales(self, scales: torch.Tensor | list[float]):
         """
         Registers training scaling factors to rescale future raw data in inference.
@@ -332,3 +332,52 @@ class SymmetricEvaluator(nn.Module):
         # Expandir de n_unique_features a n_vars usando var_indices
         scales_expanded = scales[self.var_indices]  # (n_vars,)
         self.register_buffer("input_scales", scales_expanded)
+
+    def forward_verbose(self, batch: torch.Tensor) -> torch.Tensor:
+        """
+        Diagnostic and interpretability version of the forward pass.
+        Returns a dictionary containing the final score
+        along with the internal fuzzy logic states
+        (memberships, weights, consequents) for interpretability.
+        """
+
+        # batch size: (n_samples, n_vars)
+        if hasattr(self, "input_scales"):
+            batch = batch / self.input_scales
+
+        # Get membership params
+        center_sigma_sq, sigmoid_slope, sigmoid_center, centers = (
+            self._get_membership_params_cached()
+        )
+
+        # Evaluate center membership
+        if self.has_learnable_centers:
+            mu_center = torch.exp(
+                torch.divide(-0.5 * (batch - centers) ** 2, center_sigma_sq)
+            )
+        else:
+            mu_center = torch.exp(torch.divide(0.5 * (batch**2), center_sigma_sq))
+        
+        # Evalute left and right memberships
+        mu_left = torch.sigmoid(-sigmoid_slope * (batch + sigmoid_center))
+        mu_right = torch.sigmoid(sigmoid_slope * (batch - sigmoid_center))
+
+        # Build membership stack
+        # shape: (batch_size, n_vars, n_labels (= 3))
+        memberships = torch.stack((mu_left, mu_center, mu_right), dim = 2)
+
+        # Rule evaluation
+        log_membership = torch.log(memberships + 1.0e-8).view(batch.shape[0], -1)
+        log_firing_strength = log_membership @ self.rule_matrix
+        weights = torch.softmax(log_firing_strength, dim = 1)
+        
+        consequents = self._build_consequents_cached()
+        score = (weights * consequents).sum(dim = 1)
+
+        return {
+            "score": score,
+            "memberships": memberships,
+            "weights": weights,
+            "consequents": consequents,
+            "rule_matrix": self.rule_matrix  # Included to decode which rules fired
+        }
