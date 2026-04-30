@@ -1,8 +1,7 @@
 import torch
 import chess
-from pathlib import Path
 
-from fuzzychess.config import ROOT
+from fuzzychess.config import MODELS_DIR
 from fuzzychess.evaluation.engine import FISEntry, EvaluationEngine
 from fuzzychess.evaluation.tapered import TaperedEvaluator
 from fuzzychess.evaluation.evaluator import SymmetricEvaluator
@@ -19,8 +18,8 @@ from fuzzychess.evaluation.features.extractors_cache import (
     get_promotion_chances_params,
 )
 
-ANTECEDENT3_MODEL_CHECKPOINT_PATH = ROOT / "data" / "models" / "tapered_evaluator_antecedent_3.pth"
-ANTECEDENT2_MODEL_CHECKPOINT_PATH = ROOT / "data" / "models" / "tapered_evaluator_antecedent_2.pth"
+ANTECEDENT3_MODEL_CHECKPOINT_PATH = MODELS_DIR / "tapered_evaluator_antecedent_3.pth"
+ANTECEDENT2_MODEL_CHECKPOINT_PATH = MODELS_DIR / "tapered_evaluator_antecedent_2.pth"
 
 MG_FIS_ENTRIES = [
     FISEntry(
