@@ -14,8 +14,6 @@ class Searcher:
         # Initialize transposition table as fixed-size list
         self.tt = [None] * self.tt_size
 
-        self.nodes_searched = 0
-
     def clear_tt(self):
         """Clears the transpostion table"""
         self.tt = [None] * self.tt_size
@@ -30,7 +28,6 @@ class Searcher:
         max_quiescence_depth: int | None = 10,
         use_quiescence: bool = True,
     ) -> Tuple[chess.Move | None, float]:
-        self.nodes_searched += 1
 
         # Check transposition table
         zobrist_key = board._transposition_key()
@@ -114,8 +111,6 @@ class Searcher:
         max_depth: int = 10,
         cur_depth: int = 0,
     ):
-        self.nodes_searched += 1
-
         is_check = board.is_check()
         if is_check:
             if board.is_checkmate():
