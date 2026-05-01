@@ -3,6 +3,7 @@ from enum import Enum
 
 from fuzzychess.search.search import order_moves, order_captures, CHECKMATE_SCORE
 from fuzzychess.search.searcher import Searcher
+from typing import Callable
 
 
 class QSearchMode(Enum):
@@ -25,7 +26,7 @@ class ExplainingSearcher(Searcher):
     def diagnostic_search(
         self,
         board: chess.Board,
-        eval_function: callable[[chess.Board], float],
+        eval_function: Callable[[chess.Board], float],
         alpha=-float("inf"),
         beta=float("inf"),
         depth: int = 2,
@@ -72,7 +73,7 @@ class ExplainingSearcher(Searcher):
 
             board.push(move)
 
-            child_pv, eval_opp = -self.diagnostic_search(
+            child_pv, eval_opp = self.diagnostic_search(
                 board=board,
                 eval_function=eval_function,
                 alpha=-beta,
@@ -100,7 +101,7 @@ class ExplainingSearcher(Searcher):
     def diagnostic_quiescence(
         self,
         board: chess.Board,
-        eval_function: callable[[chess.Board], float],
+        eval_function: Callable[[chess.Board], float],
         alpha: float = -float("inf"),
         beta: float = float("inf"),
         max_depth: int = 10,
