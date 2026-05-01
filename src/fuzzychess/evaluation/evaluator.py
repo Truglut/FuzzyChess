@@ -356,28 +356,28 @@ class SymmetricEvaluator(nn.Module):
                 torch.divide(-0.5 * (batch - centers) ** 2, center_sigma_sq)
             )
         else:
-            mu_center = torch.exp(torch.divide(0.5 * (batch**2), center_sigma_sq))
-        
+            mu_center = torch.exp(torch.divide(-0.5 * (batch**2), center_sigma_sq))
+
         # Evalute left and right memberships
         mu_left = torch.sigmoid(-sigmoid_slope * (batch + sigmoid_center))
         mu_right = torch.sigmoid(sigmoid_slope * (batch - sigmoid_center))
 
         # Build membership stack
         # shape: (batch_size, n_vars, n_labels (= 3))
-        memberships = torch.stack((mu_left, mu_center, mu_right), dim = 2)
+        memberships = torch.stack((mu_left, mu_center, mu_right), dim=2)
 
         # Rule evaluation
         log_membership = torch.log(memberships + 1.0e-8).view(batch.shape[0], -1)
         log_firing_strength = log_membership @ self.rule_matrix
-        weights = torch.softmax(log_firing_strength, dim = 1)
-        
+        weights = torch.softmax(log_firing_strength, dim=1)
+
         consequents = self._build_consequents_cached()
-        score = (weights * consequents).sum(dim = 1)
+        score = (weights * consequents).sum(dim=1)
 
         return {
             "score": score,
             "memberships": memberships,
             "weights": weights,
             "consequents": consequents,
-            "rule_matrix": self.rule_matrix  # Included to decode which rules fired
+            "rule_matrix": self.rule_matrix,  # Included to decode which rules fired
         }

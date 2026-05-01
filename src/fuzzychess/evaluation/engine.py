@@ -7,9 +7,9 @@ from fuzzychess.evaluation.tapered import TaperedEvaluator
 from fuzzychess.evaluation.features.fis.base import FIS
 from fuzzychess.evaluation.features.extractors_cache import BoardCache
 
-
 # FIS registration descriptor
 FISKind = Literal["differential", "per_color", "compute_difference"]
+
 
 @dataclass
 class FISEntry:
@@ -45,6 +45,7 @@ class FISEntry:
 
 
 # ---------------- EvaluationEngine ------------------------
+
 
 class EvaluationEngine:
     """
@@ -171,27 +172,34 @@ class EvaluationEngine:
 
         return score
 
-    def extract_features_dict(self, board: chess.Board) -> dict[str, float]:
+    def extract_features_dict(self, board: chess.Board) -> dict[tuple[str, str | None], float]:
         """
         Returns a labeled dict of all features for debugging and visualization.
         """
         cache = BoardCache.from_board(board)
         features = {
-            "material": cache.material_count,
-            "game_phase": self._calculate_phase(board),
+            ("game_phase", None): self._calculate_phase(board),
+            "MG": {("material", "diff"): cache.material_count},
+            "EG": {("material", "diff"): cache.material_count},
         }
 
         # Helper to populate dict cleanly
-        def populate_dict(entries, prefix):
+        def populate_dict(entries: list[FISEntry], phase: str):
             for entry in entries:
-                key = f"{prefix}_{entry.name}"
+                key = f"{entry.name}"
                 if entry.kind == "differential":
                     params = entry.extract(cache)
-                    features[key] = entry.fis.lookup(params)
+                    features[phase][(key, "diff")] = entry.fis.lookup(params)
+                elif entry.kind == "per_color":
+                    white_params, black_params = entry.extract(cache)
+                    features[phase][(f"{key}_white", "per_color")] = entry.fis.lookup(white_params)
+                    features[phase][(f"{key}_black", "per_color")] = entry.fis.lookup(black_params)
                 else:
                     white_params, black_params = entry.extract(cache)
-                    features[f"{key}_white"] = entry.fis.lookup(white_params)
-                    features[f"{key}_black"] = entry.fis.lookup(black_params)
+                    diff = entry.fis.lookup(white_params) - entry.fis.lookup(
+                        black_params
+                    )
+                    features[phase][(key, "diff")] = 0.5 * diff
 
         populate_dict(self.mg_fis_entries, "MG")
         populate_dict(self.eg_fis_entries, "EG")
