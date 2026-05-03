@@ -6,9 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "fuzzychess"
 version = "0.1.0"
 description = "Fuzzy logic chess evaluation engine"
-authors = [{ name = "Tu Nombre" }]
+authors = [{ name = "Andrés Contreras Santos" }]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 dependencies = [
     "numpy",
