@@ -16,20 +16,18 @@ This repository contains the source code for the FuzzyChess engine, the evaluati
 
 ### Key Features
 
-* **Fuzzy Evaluation Engine:** evaluates positions based on a hierarchical fuzzy inference system. The engine utilizes tapered evaluation to combine potentially different opening/middle game and endgame evaluations. 
+* **Fuzzy Evaluation Engine:** evaluates positions based on a hierarchical fuzzy inference system. The engine utilizes tapered evaluation to combine potentially different opening/middle game and endgame evaluations.
 
-Opening/middle game evaluation is based on the following features:
-* Material difference. Evaluated using traditional piece values, except for bishops which are valued at 3.15.
-* King safety. Evaluated using a FIS, independently for white and black.
-* Central control. Evaluated using a FIS as a differential feature.
-* Mobility. Evaluated using a FIS independently for white and black. However, the engine then utilizes the difference between white and black mobility scores for evaluation.
-* Pawn structure. Same as mobility.
+The features each evaluation is based are described in the following table:
 
-Endgame evaluation is based on the following features:
-* Material difference. Same as in the middle game.
-* Mobility. Same as in the middle game.
-* Pawn structure. Same as in the middle game.
-* Promotion chances. Computed and utilized in a similar way to mobility.
+| Feature                 | Opening / Middle game                                                                             | Endgame                                      |
+| :---------------------- | :------------------------------------------------------------------------------------------------ | :------------------------------------------- |
+| **Material difference** | Evaluated using traditional piece values ( bishops = 3.15)                                        | Same as middle game                          |
+| **King Safety**         | Evaluated using a FIS, independently for white and black                                          | Not evaluated                                |
+| **Central Control**     | Evaluated using a FIS as a differential feature                                                   | Not evaluated                                |
+| **Mobility**            | Evaluate using a FIS independently. The engine uses the difference between white and black scores | Same as middle game                          |
+| **Pawn structure**      | Evaluated and utilized similarly to mobility                                                      | Same as middle game                          |
+| **Promotion chanches**  | Not evaluated                                                                                     | Evaluated and utilized similarly to mobility |
 
 * **UCI Support:** includes a Universal Chess Interface (UCI) wrapper, allowing integration with standard chess GUIs (e.g. CuteChess).
 * **Explanaible AI for chess:** modules to generate human-readable explanations of why a particular evaluation was given.
