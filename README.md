@@ -30,7 +30,7 @@ The features each evaluation is based are described in the following table:
 | **Promotion chanches**  | Not evaluated.                                                                                     | Evaluated and utilized similarly to mobility. |
 
 * **UCI Support:** includes a Universal Chess Interface (UCI) wrapper, allowing integration with standard chess GUIs (e.g. CuteChess).
-* **Explanaible AI for chess:** modules to generate human-readable explanations of why a particular evaluation was given.
+* **Explainable AI for chess:** modules to generate human-readable explanations of why a particular evaluation was given.
 * **(Anti-)Symmetric evaluation:** the evaluation system is built to ensure it treats white and black pieces equally.
 
 
@@ -84,7 +84,7 @@ For GUIs that require an executable file, a solution is to create a shell script
 
 ### As a Python Library
 
-You can import FuzzyChess modules directly into your own Python scripts to evaluate specific positions or utilize the explainability features. See `notebooks/board_evaluation/board_evaluation.ipynb` for an example use case.
+You can import FuzzyChess modules directly into your own Python scripts to evaluate specific positions or utilize the explainability features. An example of its usage can be found in the following code block. See `notebooks/board_evaluation/board_evaluation.ipynb` for a more detailed example use case.
 
 ```python
 import chess
@@ -104,7 +104,11 @@ print(f"Static evaluation {static_evaluation:.2f}\n")
 explainer.print_full_analysis(board)
 
 # Alternatively, get dynamic evaluation with a simple move search and evaluate the principal variation
-principal_variation, dynamic_evaluation = explaining_searcher.diagnostic_search(board, lambda board: evaluator.evaluate(board), depth = 3)
+principal_variation, dynamic_evaluation = explaining_searcher.diagnostic_search(
+    board,
+    lambda board: evaluator.evaluate(board),
+    depth = 3
+)
 
 # Print principal variation
 print("---- Principal Variation ----")
