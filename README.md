@@ -112,7 +112,7 @@ explainer.print_full_analysis(board)
 principal_variation, dynamic_evaluation = explaining_searcher.diagnostic_search(
     board,
     lambda board: evaluator.evaluate(board),
-    depth = 3
+    depth=3
 )
 
 # Print principal variation
