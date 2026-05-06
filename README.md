@@ -22,7 +22,7 @@ The features each evaluation is based are described in the following table:
 
 | Feature                 | Opening / Middle game                                                                              | Endgame                                      |
 | :---------------------- | :------------------------------------------------------------------------------------------------- | :------------------------------------------- |
-| **Material difference** | Evaluated using traditional piece values ( bishops = 3.15).                                        | Same as middle game.                         |
+| **Material difference** | Evaluated using traditional piece values (bishops = 3.15).                                        | Same as middle game.                         |
 | **King Safety**         | Evaluated using a FIS, independently for white and black.                                          | Not evaluated.                               |
 | **Central Control**     | Evaluated using a FIS as a differential feature.                                                   | Not evaluated.                               |
 | **Mobility**            | Evaluate using a FIS independently. The engine uses the difference between white and black scores. | Same as middle game.                         |
@@ -93,7 +93,12 @@ from fuzzychess.explainability.explainer import PositionExplainer
 from fuzzychess.explainability.explaining_searcher import ExplainingSearcher
 
 # Example usage
-board = chess.Board()
+
+# Initialize the chess.Board object using a FEN string
+example_position = "r1b2rk1/ppp2pp1/3p3p/3Pn3/4N3/2PBP3/P1P3PP/1R3RK1 w - - 1 20"
+board = chess.Board(example_position)
+
+# Load the evaluator, searcher and explainer
 evaluator = load_bot()
 explaining_searcher = ExplainingSearcher()
 explainer = PositionExplainer(evaluator, explaining_searcher)
